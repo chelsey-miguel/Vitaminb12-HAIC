@@ -2,7 +2,7 @@
 
 HAIC 2026 entry for the DBEDT Know Your District
 
-**Solution type:** ArcGIS Experience Builder with supporting embed pages
+**Solution type:** ArcGIS Experience Builder with embed pages
 
 ## Access
 - **Map app (ArcGIS Experience Builder):** `(https://experience.arcgis.com/experience/3dca2a99468841739684895dc3c8f90d)`
