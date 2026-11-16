@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ask about your district</title>
+<style>
+:root{--bg:#1c1d22;--card:#26272e;--ink:#f2f2f5;--mute:#c3c5d0;--line:#3d3e49;--blue:#2560b0;--purple:#8f62ab;--accent:#6aa6f0}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
+body::before{content:"";position:fixed;right:-40px;bottom:40px;width:min(62vw,420px);aspect-ratio:700/615;background:url(flower.png) no-repeat center/contain;opacity:.13;pointer-events:none;z-index:0}
+#bar,#log,form,.fine{position:relative;z-index:1}
+#bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;border:1px solid var(--purple);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--ink);border:0;padding:6px 12px;cursor:pointer;font-size:.88rem}
+.seg button[aria-pressed=true]{background:var(--purple);color:#fff;font-weight:700}
+#sel{background:var(--card);color:var(--ink);border:1px solid var(--purple);border-radius:8px;padding:6px 8px;font-size:.88rem;max-width:100%}
+.bot .b{background:rgba(38,39,46,.92)}
+#log{flex:1;overflow-y:auto;padding:12px 14px;scroll-behavior:smooth}
+.row{display:flex;gap:8px;margin:10px 0;align-items:flex-end}.row.me{justify-content:flex-end}
+.row .b{max-width:86%;padding:10px 13px;border-radius:16px;word-wrap:break-word;overflow-wrap:anywhere}
+.bot .b{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+.me .b{background:var(--blue);color:#fff;border-bottom-right-radius:4px;white-space:pre-wrap}
+.b p{margin:0 0 8px}.b p:last-child{margin:0}.b ul{margin:4px 0 8px;padding-left:20px}.b li{margin:2px 0}.b a{color:var(--accent)}.b strong{color:#fff}
+.tools{display:flex;gap:8px;margin-top:6px}.tools button{background:none;border:0;color:var(--mute);font-size:.78rem;cursor:pointer;padding:2px 0;text-decoration:underline}
+.dots{display:inline-flex;gap:4px;padding:4px 0}.dots i{width:7px;height:7px;border-radius:50%;background:var(--mute);animation:d 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes d{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.dots i{animation:none}#log{scroll-behavior:auto}}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.sugg button{background:transparent;color:var(--ink);border:1px solid var(--purple);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:.85rem}
+.sugg button:hover{background:var(--purple)}
+form{display:flex;gap:8px;padding:10px 14px 4px;border-top:1px solid var(--line);align-items:flex-end}
+textarea{flex:1;resize:none;max-height:110px;background:var(--card);color:var(--ink);border:1px solid var(--mute);border-radius:14px;padding:10px 12px;font:inherit;min-width:0}
+.send{background:var(--blue);color:#fff;border:0;border-radius:50%;width:42px;height:42px;font-size:1.1rem;font-weight:700;cursor:pointer;flex:none}
+.send:disabled{opacity:.5;cursor:wait}
+button:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.fine{color:var(--mute);font-size:.72rem;padding:2px 14px 8px;display:flex;justify-content:space-between;gap:8px}
+</style></head><body>
+<div id="bar"><div class="seg" role="group" aria-label="Choose scope"><button type="button" data-s="">Statewide</button><button type="button" data-s="H">House</button><button type="button" data-s="S">Senate</button></div><select id="sel" aria-label="Choose a district" hidden></select></div>
+<div id="log" role="log" aria-live="polite" aria-label="Conversation"></div>
+<form id="f"><label for="q" style="position:absolute;left:-9999px">Your question</label>
+<textarea id="q" rows="1" maxlength="600" autocomplete="off" placeholder="Ask about this district…"></textarea><button class="send" id="go" aria-label="Send question">&#10148;</button></form>
+<p class="fine"><span>Can make mistakes. Does not decide who qualifies. Confirm on the official page. No personal info, please.</span><span id="cnt">0/600</span></p>
+<script>
+const DISTRICTS=[["H01", "State House District 1"], ["H02", "State House District 2"], ["H03", "State House District 3"], ["H04", "State House District 4"], ["H05", "State House District 5"], ["H06", "State House District 6"], ["H07", "State House District 7"], ["H08", "State House District 8"], ["H09", "State House District 9"], ["H10", "State House District 10"], ["H11", "State House District 11"], ["H12", "State House District 12"], ["H13", "State House District 13"], ["H14", "State House District 14"], ["H15", "State House District 15"], ["H16", "State House District 16"], ["H17", "State House District 17"], ["H18", "State House District 18"], ["H19", "State House District 19"], ["H20", "State House District 20"], ["H21", "State House District 21"], ["H22", "State House District 22"], ["H23", "State House District 23"], ["H24", "State House District 24"], ["H25", "State House District 25"], ["H26", "State House District 26"], ["H27", "State House District 27"], ["H28", "State House District 28"], ["H29", "State House District 29"], ["H30", "State House District 30"], ["H31", "State House District 31"], ["H32", "State House District 32"], ["H33", "State House District 33"], ["H34", "State House District 34"], ["H35", "State House District 35"], ["H36", "State House District 36"], ["H37", "State House District 37"], ["H38", "State House District 38"], ["H39", "State House District 39"], ["H40", "State House District 40"], ["H41", "State House District 41"], ["H42", "State House District 42"], ["H43", "State House District 43"], ["H44", "State House District 44"], ["H45", "State House District 45"], ["H46", "State House District 46"], ["H47", "State House District 47"], ["H48", "State House District 48"], ["H49", "State House District 49"], ["H50", "State House District 50"], ["H51", "State House District 51"], ["S01", "State Senate District 1"], ["S02", "State Senate District 2"], ["S03", "State Senate District 3"], ["S04", "State Senate District 4"], ["S05", "State Senate District 5"], ["S06", "State Senate District 6"], ["S07", "State Senate District 7"], ["S08", "State Senate District 8"], ["S09", "State Senate District 9"], ["S10", "State Senate District 10"], ["S11", "State Senate District 11"], ["S12", "State Senate District 12"], ["S13", "State Senate District 13"], ["S14", "State Senate District 14"], ["S15", "State Senate District 15"], ["S16", "State Senate District 16"], ["S17", "State Senate District 17"], ["S18", "State Senate District 18"], ["S19", "State Senate District 19"], ["S20", "State Senate District 20"], ["S21", "State Senate District 21"], ["S22", "State Senate District 22"], ["S23", "State Senate District 23"], ["S24", "State Senate District 24"], ["S25", "State Senate District 25"]];
+const log=document.getElementById("log"),q=document.getElementById("q"),go=document.getElementById("go"),cnt=document.getElementById("cnt");
+let geo=(new URLSearchParams(location.search).get("geo")||"").toUpperCase();if(!DISTRICTS.some(d=>d[0]===geo))geo="";
+const sel=document.getElementById("sel"),segs=[...document.querySelectorAll(".seg button")];
+let scope=geo?geo[0]:"";
+function drawBar(){segs.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===scope)));
+ if(!scope){sel.hidden=true;return}
+ sel.hidden=false;sel.innerHTML=DISTRICTS.filter(d=>d[0][0]===scope).map(d=>`<option value="${d[0]}"${d[0]===geo?" selected":""}>${d[1]}</option>`).join("");}
+const reset=()=>{hist.length=0;log.innerHTML="";start();};
+segs.forEach(b=>b.onclick=()=>{scope=b.dataset.s;geo=scope?(DISTRICTS.find(d=>d[0][0]===scope)||[""])[0]:"";drawBar();reset();});
+sel.onchange=()=>{geo=sel.value;reset();};
+const hist=[];let busy=false,lastQ="";
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function md(s){
+ let h=esc(s).replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/https:\/\/[^\s<)]+[^\s<).,;]/g,u=>`<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+ const out=[];let ul=false;
+ h.split(/\n/).forEach(l=>{const m=l.match(/^\s*(?:[-*•]|\d+\.)\s+(.*)/);
+  if(m){if(!ul){out.push("<ul>");ul=true}out.push("<li>"+m[1]+"</li>")}
+  else{if(ul){out.push("</ul>");ul=false}if(l.trim())out.push("<p>"+l+"</p>")}});
+ if(ul)out.push("</ul>");return out.join("");}
+function row(role){const r=document.createElement("div");r.className="row "+(role==="user"?"me":"bot");
+ const b=document.createElement("div");b.className="b";r.appendChild(b);log.appendChild(r);log.scrollTop=log.scrollHeight;return b;}
+function chips(list){document.querySelectorAll(".sugg").forEach(e=>e.remove());
+ const s=document.createElement("div");s.className="sugg";
+ list.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>ask(t);s.appendChild(b)});log.appendChild(s);log.scrollTop=log.scrollHeight;}
+const FIRST=()=>geo?["What stands out about this district?","Which programs may help kūpuna here?","How do housing costs compare to the state?","Compare this district with another one"]:["Which districts have the highest poverty rate?","Which districts have the most kūpuna?","How does Maui County compare to the state?","Compare House District 12 and 13"];
+const MORE=()=>geo?["What programs fit this district?","Compare this to State House District 13","Where can I find more Hawaiʻi data?"]:["Which districts have the highest rent?","Where can I find more Hawaiʻi data?","How reliable are these numbers?"];
+function start(){const b=row("bot");
+ b.innerHTML=geo?"<p>Aloha! Ask me about <strong>"+esc((DISTRICTS.find(d=>d[0]===geo)||[0,"this district"])[1])+"</strong>: who lives here, income and housing costs, and programs that may help.</p>":"<p>Aloha! Ask a statewide question, or pick House or Senate above to choose a district. You can also name one, for example \"What stands out in House District 12?\". I only use public Census data and a checked list of state and federal programs.</p>";
+ chips(FIRST());}
+async function ask(t,retry){
+ t=t.trim();if(!t||busy)return;busy=true;go.disabled=true;lastQ=t;
+ document.querySelectorAll(".sugg").forEach(e=>e.remove());
+ if(!retry){q.value="";q.style.height="auto";cnt.textContent="0/600";row("user").textContent=t}
+ const w=row("bot");w.innerHTML='<span class="dots" role="status" aria-label="Looking that up"><i></i><i></i><i></i></span>';
+ try{const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question:t,geo,history:hist})});
+  const j=await r.json();
+  if(j.answer){w.innerHTML=md(j.answer);hist.push({role:"user",content:t},{role:"assistant",content:j.answer});
+   const tl=document.createElement("div");tl.className="tools";const c=document.createElement("button");c.type="button";c.textContent="Copy answer";c.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(j.answer);c.textContent="Copied"};tl.appendChild(c);w.appendChild(tl);chips(MORE());}
+  else{w.innerHTML="<p>"+esc(j.error||"Something went wrong.")+"</p>";}
+ }catch{w.innerHTML="<p>I couldn't reach the assistant. Check your connection and try again.</p>";
+  const tl=document.createElement("div");tl.className="tools";const c=document.createElement("button");c.type="button";c.textContent="Try again";c.onclick=()=>{w.closest(".row").remove();ask(lastQ,true)};tl.appendChild(c);w.appendChild(tl);}
+ busy=false;go.disabled=false;log.scrollTop=log.scrollHeight;q.focus();}
+q.addEventListener("input",()=>{q.style.height="auto";q.style.height=Math.min(q.scrollHeight,110)+"px";cnt.textContent=q.value.length+"/600"});
+q.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask(q.value)}});
+document.getElementById("f").onsubmit=e=>{e.preventDefault();ask(q.value)};
+drawBar();start();
+</script></body></html>
